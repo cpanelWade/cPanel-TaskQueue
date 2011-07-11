@@ -1,9 +1,11 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
+0.503_03  2011-07-11 11:15:02 America/Chicago
        Many CPANTESTERS machines apparently do not allow writing to /tmp, but
        still have File::Spec->tmpdir() returning that directory. Modified temp
        directory handlign in tests.
+       Modify test to reduce failure due to race condition.
 0.503_02  2011-01-25 12:12:37 America/Chicago
        More CPANTESTERS cleanup.
 0.503_01  2011-01-04 15:55:34 America/Chicago
