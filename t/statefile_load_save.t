@@ -26,6 +26,7 @@ File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 # test valid creation
 my $mock_obj = MockCacheable->new;
 
+sleep 1; # match times for testing.
 my $state = cPanel::StateFile->new( { state_file => $file, data_obj => $mock_obj } );
 isa_ok( $state, 'cPanel::StateFile' );
 
