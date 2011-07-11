@@ -6,7 +6,7 @@ cPanel::StateFile::FileLocker - Lock and unlock files using C<flock>.
 
 =head1 VERSION
 
-This document describes cPanel::StateFile::FileLocker version 0.503_02
+This document describes cPanel::StateFile::FileLocker version 0.503_03
 
 
 =head1 SYNOPSIS
@@ -208,7 +208,7 @@ G. Wade Johnson  C<< wade@cpanel.net >>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2010, cPanel, Inc. All rights reserved.
+Copyright (c) 2011, cPanel, Inc. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.

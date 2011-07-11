@@ -5,7 +5,7 @@ cPanel::StateFile - Standardize the handling of file-based state data.
 
 =head1 VERSION
 
-This document describes cPanel::StateFile 0.503_02
+This document describes cPanel::StateFile 0.503_03
 
 =head1 SYNOPSIS
 
@@ -331,7 +331,7 @@ and it's size does not change, it may not be detected.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2010, cPanel, Inc. All rights resrved.
+Copyright (c) 2011, cPanel, Inc. All rights resrved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.

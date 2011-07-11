@@ -5,7 +5,7 @@ cPanel::TaskQueue::Task - Objects representing the task concept.
 
 =head1 VERSION
 
-This document describes cPanel::TaskQueue::Task version 0.503_02.
+This document describes cPanel::TaskQueue::Task version 0.503_03.
 
 =head1 SYNOPSIS
 
@@ -252,7 +252,7 @@ cPanel::TaskProcessor
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2010, cPanel, Inc. All rights reserved.
+Copyright (c) 2011, cPanel, Inc. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
