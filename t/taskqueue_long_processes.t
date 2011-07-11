@@ -12,19 +12,19 @@ use strict;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
 use File::Path ();
-use File::Spec ();
 
 use Test::More tests => 34;
 use cPanel::TaskQueue;
 
-my $statedir = File::Spec->tmpdir() . '/statedir';
+my $tmpdir = './tmp';
+my $statedir = "$tmpdir/statedir";
 
 {
     package SleepTask;
     use base 'cPanel::TaskQueue::ChildProcessor';
 
     sub _do_child_task {
-        my ($self, $cmd, @args) = @_;
+        my ($self, $cmd, $logger, @args) = @_;
 
         my $secs = $args[0] || 10;
         system( "sleep $secs" );
@@ -90,5 +90,5 @@ SKIP:
 
 # Clean up after myself
 sub cleanup {
-    File::Path::rmtree( $statedir );
+    File::Path::rmtree( $tmpdir );
 }

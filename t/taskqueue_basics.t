@@ -6,15 +6,17 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
-use File::Spec ();
+use File::Path ();
 
 use Test::More tests => 41;
 use cPanel::TaskQueue;
 
-my $statedir = File::Spec->tmpdir() . '/state_test';
+my $tmpdir = './tmp';
+my $statedir = "$tmpdir/state_test";
 
 # In case the last test did not succeed.
 cleanup();
+File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 
 # Create the real TaskQueue
 my $queue = cPanel::TaskQueue->new( { name => 'tasks', state_dir => $statedir } );
@@ -122,7 +124,5 @@ cleanup();
 
 # Clean up after myself
 sub cleanup {
-    foreach my $file ( 'tasks_queue.yaml', 'tasks_queue.yaml.lock' ) {
-        unlink "$statedir/$file" if -e "$statedir/$file";
-    }
+    File::Path::rmtree( $tmpdir );
 }

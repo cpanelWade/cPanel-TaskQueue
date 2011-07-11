@@ -11,15 +11,17 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
-use File::Spec ();
+use File::Path ();
 
 use Test::More tests => 84;
 use cPanel::TaskQueue::Scheduler;
 
-my $statedir = File::Spec->tmpdir();
+my $tmpdir = './tmp';
+my $statedir = $tmpdir;
 
 # In case the last test did not succeed.
 cleanup();
+File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 
 eval {
     cPanel::TaskQueue::Scheduler->new( {state_dir => $statedir} );
@@ -184,7 +186,5 @@ sub check_task_insertion {
 
 # Clean up after myself
 sub cleanup {
-    foreach my $file ( 'tasks_sched.yaml', 'task_sched.yaml.lock' ) {
-        unlink "$statedir/$file" if -e "$statedir/$file";
-    }
+    File::Path::rmtree( $tmpdir ) if -d $tmpdir;
 }

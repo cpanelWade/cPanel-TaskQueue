@@ -5,7 +5,6 @@ use lib "$FindBin::Bin/mocks";
 
 use Test::More tests => 5;
 use File::Path ();
-use File::Spec ();
 
 use strict;
 use warnings;
@@ -13,11 +12,13 @@ use warnings;
 use cPanel::StateFile;
 use MockCacheable;
 
-my $dir = File::Spec->tmpdir() . '/state_test';
+my $tmpdir = './tmp';
+my $dir = "$tmpdir/state_test";
 my $file = "$dir/state_dir/state_file";
 my $lockname = "$file.lock";
 
 cleanup();
+File::Path::mkpath( $tmpdir ) or die "Unable to create temporary directory: $!";
 
 my $mock_obj = MockCacheable->new;
 my $state = cPanel::StateFile->new( { state_file => $file, data_obj => $mock_obj } );
@@ -51,7 +52,5 @@ cleanup();
 
 # Discard temporary files that we don't need any more.
 sub cleanup {
-    unlink $file if -e $file;
-    unlink $lockname if -e $lockname;
-    File::Path::rmtree( $dir ) if -d $dir;
+    File::Path::rmtree( $tmpdir ) if -d $tmpdir;
 }

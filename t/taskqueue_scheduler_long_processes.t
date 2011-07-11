@@ -11,13 +11,13 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
-use File::Spec ();
 use File::Path ();
 
 use Test::More tests => 18;
 use cPanel::TaskQueue::Scheduler;
 
-my $statedir = File::Spec->tmpdir() . '/statedir';
+my $tmpdir = './tmp';
+my $statedir = "$tmpdir/statedir";
 
 {
     package MockQueue;
@@ -112,5 +112,5 @@ SKIP:
 
 # Clean up after myself
 sub cleanup {
-    File::Path::rmtree( $statedir );
+    File::Path::rmtree( $tmpdir ) if -d $tmpdir;
 }

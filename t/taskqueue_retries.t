@@ -11,14 +11,15 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
-use File::Spec ();
+use File::Path ();
 
 use Test::More tests => 17;
 use cPanel::TaskQueue::Scheduler;
 use cPanel::TaskQueue;
 use cPanel::TaskQueue::Task;
 
-my $statedir = File::Spec->tmpdir();
+my $tmpdir = './tmp';
+my $statedir = $tmpdir;
 
 # Processor designed to test retry logic.
 {
@@ -49,6 +50,7 @@ cPanel::TaskQueue->register_task_processor( 'task', MockTimeoutProcessor->new() 
 
 # In case the last test did not succeed.
 cleanup();
+File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 
 my $sched = cPanel::TaskQueue::Scheduler->new(
     { name => 'tasks', state_dir => $statedir }
@@ -96,7 +98,5 @@ cleanup();
 
 # Clean up after myself
 sub cleanup {
-    foreach my $file ( 'tasks_sched.yaml', 'task_sched.yaml.lock' ) {
-        unlink "$statedir/$file" if -e "$statedir/$file";
-    }
+    File::Path::rmtree( $tmpdir ) if -d $tmpdir;
 }

@@ -4,10 +4,14 @@ use Test::More tests => 6;
 
 use strict;
 use warnings;
-use File::Spec ();
+use File::Path ();
 use cPanel::StateFile;
 
-my $dir = File::Spec->tmpdir() . '/state_test';
+my $tmpdir = './tmp';
+
+# Make sure we are clean to start with.
+File::Path::rmtree( $tmpdir );
+my $dir = "$tmpdir/state_test";
 my $file = "$dir/state_dir/state_file";
 
 eval {
@@ -39,3 +43,5 @@ eval {
     cPanel::StateFile->new( {locker => ''} );
 };
 like( $@, qr/Supplied locker/, 'Recognize bad locker.' );
+
+File::Path::rmtree( $tmpdir );

@@ -5,14 +5,14 @@ use Test::More tests => 7;
 use strict;
 use warnings;
 use FindBin;
-use File::Spec ();
 use File::Path ();
 use lib "$FindBin::Bin/mocks";
 
 
 use cPanel::TaskQueue ( -logger => 'cPanel::FakeLogger' );
 
-my $statedir = File::Spec->tmpdir() . '/state_test';
+my $tmpdir = './tmp';
+my $statedir = "$tmpdir/state_test";
 
 # In case the last test did not succeed.
 cleanup();
@@ -55,5 +55,5 @@ cleanup();
 
 # Clean up after myself
 sub cleanup {
-    File::Path::rmtree( $statedir );
+    File::Path::rmtree( $tmpdir );
 }

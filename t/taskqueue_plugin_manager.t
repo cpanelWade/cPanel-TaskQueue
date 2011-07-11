@@ -6,15 +6,17 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
-use File::Spec ();
 use File::Path ();
 my $plugins;
+my $tmpdir;
+
 BEGIN {
-    $plugins = File::Spec->tmpdir() . '/fake_plugins';
+    $tmpdir = './tmp';
+    $plugins = "$tmpdir/fake_plugins";
     File::Path::mkpath $plugins;
 }
 use lib $plugins;
-END { File::Path::rmtree $plugins; }
+END { File::Path::rmtree $tmpdir; }
 
 use Test::More tests => 13;
 use cPanel::TaskQueue::PluginManager;
@@ -56,7 +58,7 @@ eval {
 like( $@, qr/not a valid/, 'Namespace must have valid form' );
 
 # Capture STDERR so Logger doesn't go to screen.
-my $tmp_dumpfile = File::Spec->tmpdir() . '/qpm_test.log';
+my $tmp_dumpfile = "$tmpdir/qpm_test.log";
 open( my $olderr, '>&STDERR' ) or die "Can't dupe STDERR: $!";
 close( STDERR ); open( STDERR, '>', $tmp_dumpfile ) or die "Unable to redirect STDERR: $!";
 

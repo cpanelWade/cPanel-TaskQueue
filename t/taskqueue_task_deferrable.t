@@ -7,11 +7,11 @@ use warnings;
 
 use cPanel::TaskQueue;
 use File::Path ();
-use File::Spec ();
 
-my $state_dir = File::Spec->tmpdir() . '/queue';
+my $tmpdir = './tmp';
+my $state_dir = "$tmpdir/queue";
 
-File::Path::rmtree( $state_dir );
+File::Path::rmtree( $tmpdir );
 
 sub make_process_wait {
     open my $fh, '>>', "$state_dir/flag" or die "Unable to create flag file: $!\n";
@@ -189,4 +189,4 @@ sub clear_process_wait { unlink "$state_dir/flag"; }
     File::Path::rmtree( $state_dir );
 }
 
-File::Path::rmtree( $state_dir );
+File::Path::rmtree( $tmpdir );

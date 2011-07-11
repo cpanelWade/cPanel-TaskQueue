@@ -6,14 +6,15 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
-use File::Spec ();
+use File::Path ();
 
 use Test::More tests => 39;
 use cPanel::TaskQueue;
 use cPanel::TaskQueue::Processor;
 
-my $statedir = File::Spec->tmpdir() . '/statedir';
-my $missing_dir = File::Spec->tmpdir() . '/task_queue_test';
+my $tmpdir = './tmp';
+my $statedir = "$tmpdir/statedir";
+my $missing_dir = "$tmpdir/task_queue_test";
 
 {
     package MockProcessor;
@@ -43,6 +44,7 @@ cPanel::TaskQueue->register_task_processor( 'mock', MockProcessor->new() );
 
 # In case the last test did not succeed.
 cleanup();
+File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 
 # Create the real TaskQueue
 my $queue = cPanel::TaskQueue->new( { name => 'tasks', state_dir => $statedir } );
@@ -125,10 +127,5 @@ sub remove_and_check_tasks {
 
 # Clean up after myself
 sub cleanup {
-    foreach my $dir ($statedir, $missing_dir) {
-        foreach my $file ( 'tasks_queue.yaml', 'tasks_queue.yaml.lock' ) {
-            unlink "$dir/$file" if -e "$dir/$file";
-        }
-    }
-    rmdir $missing_dir if -d $missing_dir;
+    File::Path::rmtree( $tmpdir ) if -d $tmpdir;
 }

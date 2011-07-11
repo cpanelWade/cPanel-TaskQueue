@@ -7,12 +7,14 @@ use strict;
 
 use Test::More tests => 2;
 use cPanel::TaskQueue;
-use File::Spec ();
+use File::Path ();
 
-my $missing_dir = File::Spec->tmpdir() . '/task_queue_test';
+my $tmpdir = './tmp';
+my $missing_dir = "$tmpdir/task_queue_test";
 
 # In case the last test did not succeed.
 cleanup();
+File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 
 # Test queue directory creation.
 ok( cPanel::TaskQueue->new( { name => 'tasks', state_dir=> $missing_dir } ), 'Cache created with missing dir' );

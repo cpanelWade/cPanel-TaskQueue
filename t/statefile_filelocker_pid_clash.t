@@ -11,7 +11,7 @@ use FindBin;
 use lib "$FindBin::Bin/mocks";
 
 use POSIX qw(strftime);
-use File::Spec ();
+use File::Path ();
 use Test::More tests=>2;
 
 use cPanel::FakeLogger;
@@ -21,9 +21,14 @@ use cPanel::StateFile::FileLocker ();
 # I am peeking inside the class in order to test this functionality. This access
 #  may be removed or changed at any time.
 
-my $filename = File::Spec->tmpdir() . '/fake.file';
+my $tmpdir = './tmp';
+
+# Make sure we are clean to start with.
+File::Path::rmtree( $tmpdir );
+my $filename = "$tmpdir/fake.file";
 my $lockfile = "$filename.lock";
 
+File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 my $logger = cPanel::FakeLogger->new;
 my $locker = cPanel::StateFile::FileLocker->new({logger => $logger, max_age=>120, max_wait=>120});
 
@@ -48,7 +53,7 @@ my $locker = cPanel::StateFile::FileLocker->new({logger => $logger, max_age=>120
         $locker->file_unlock( $lock );
     }
 }
-unlink $lockfile;
+File::Path::rmtree( $tmpdir );
 
 sub is_within {
     my ($val, $min, $max, $msg) = @_;

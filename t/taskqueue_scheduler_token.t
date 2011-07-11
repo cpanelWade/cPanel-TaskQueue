@@ -5,14 +5,15 @@ use Test::More tests => 10;
 use strict;
 use warnings;
 
-use File::Spec ();
 use File::Path ();
 use cPanel::TaskQueue::Scheduler;
 
-my $statedir = File::Spec->tmpdir() . '/taskqueue';
+my $tmpdir = './tmp';
+my $statedir = "$tmpdir/taskqueue";
 
 # In case the last test did not succeed.
 cleanup();
+File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 
 my $sched = cPanel::TaskQueue::Scheduler->new(
     { name => 'tasks', state_dir => $statedir }
@@ -64,10 +65,9 @@ eval {
 };
 like( $@, qr/Invalid token./, 'File does not match' );
 
+cleanup();
+
 # Clean up after myself
 sub cleanup {
-    foreach my $file ( 'tasks_sched.yaml', 'task_sched.yaml.lock' ) {
-        unlink "$statedir/$file" if -e "$statedir/$file";
-    }
-    File::Path::rmtree( $statedir ) if -e $statedir;
+    File::Path::rmtree( $tmpdir ) if -e $tmpdir;
 }

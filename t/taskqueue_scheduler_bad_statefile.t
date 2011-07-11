@@ -6,12 +6,12 @@ use strict;
 use warnings;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
-use File::Spec ();
 use File::Path ();
 
 use cPanel::TaskQueue::Scheduler ( -logger => 'cPanel::FakeLogger' );
 
-my $statedir = File::Spec->tmpdir() . '/statedir';
+my $tmpdir = './tmp';
+my $statedir = "$tmpdir/statedir";
 
 # In case the last test did not succeed.
 cleanup();
@@ -54,5 +54,5 @@ cleanup();
 
 # Clean up after myself
 sub cleanup {
-    File::Path::rmtree( $statedir );
+    File::Path::rmtree( $tmpdir ) if -d $tmpdir;
 }

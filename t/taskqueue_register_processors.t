@@ -6,12 +6,16 @@
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/mocks";
-use File::Spec ();
+use File::Path ();
 
 use Test::More tests => 20;
 use cPanel::TaskQueue;
 
-my $statedir = File::Spec->tmpdir();
+my $tmpdir = './tmp';
+
+# Make sure we are clean to start with.
+File::Path::rmtree( $tmpdir );
+my $statedir = $tmpdir;
 
 eval {
     cPanel::TaskQueue->register_task_processor();
@@ -93,7 +97,5 @@ cleanup();
 
 # Clean up after myself
 sub cleanup {
-    foreach my $file ( 'tasks_queue.yaml', 'tasks_queue.yaml.lock' ) {
-        unlink "$statedir/$file" if -e "$statedir/$file";
-    }
+    File::Path::rmtree( $tmpdir );
 }
