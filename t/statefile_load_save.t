@@ -26,7 +26,6 @@ File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 # test valid creation
 my $mock_obj = MockCacheable->new;
 
-sleep 1; # match times for testing.
 my $state = cPanel::StateFile->new( { state_file => $file, data_obj => $mock_obj } );
 isa_ok( $state, 'cPanel::StateFile' );
 
@@ -47,6 +46,18 @@ ok( !-e $lockname, "File not locked at this time." );
     is( $msg, "This is an info message\n", 'info method works.' );
 }
 
+# Test re-synch when file hasn't changed.
+# Lock the file for update.
+{
+    my $guard = $state->synch();
+    ok( -e $lockname, "File is locked." );
+
+    is( $mock_obj->{load_called}, 0, "memory up-to-date, don't load." );
+    $guard->update_file();
+    is( $mock_obj->{save_called}, 2, "update calls save." );
+}
+ok( !-e $lockname, "File is unlocked." );
+
 # Test empty file case
 {
     # Recreating file, so delete it first.
@@ -60,7 +71,7 @@ ok( !-e $lockname, "File not locked at this time." );
     ok( !-z $file, "Cache file should be filled." );
 
     is( $mock_obj->{load_called}, 0, "File was empty, should not have loaded." );
-    is( $mock_obj->{save_called}, 2, "File was empty, should have saved." );
+    is( $mock_obj->{save_called}, 3, "File was empty, should have saved." );
 
     ok( !-e $lockname, "File not locked at this time." );
 }
@@ -68,20 +79,8 @@ ok( !-e $lockname, "File not locked at this time." );
 {
     open( my $fh, '<', $file ) or die "Unable to read state file: $!\n";
     my $file_data = <$fh>;
-    is( $file_data, 'Save string: 2 0', 'state_file is correct.' );
+    is( $file_data, 'Save string: 3 0', 'state_file is correct.' );
 }
-
-# Test re-synch when file hasn't changed.
-# Lock the file for update.
-{
-    my $guard = $state->synch();
-    ok( -e $lockname, "File is locked." );
-
-    is( $mock_obj->{load_called}, 0, "memory up-to-date, don't load." );
-    $guard->update_file();
-    is( $mock_obj->{save_called}, 3, "update calls save." );
-}
-ok( !-e $lockname, "File is unlocked." );
 
 # Update state file directly.
 {
