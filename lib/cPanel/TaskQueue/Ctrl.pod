@@ -79,6 +79,11 @@ C<TaskQueue::Scheduler> whenever they need to write output to the user.
 Specify an output filehandle for printing. If not supplied, use the STDOUT
 handle instead.
 
+=item serial
+
+Specify which serializer to use. Valid values are C<storable> and C<yaml>. If
+no serializer type is specified, the default (C<storable>) will be used.
+
 =back
 
 =head2 $ctrl->run( $cmd, @args )
@@ -188,6 +193,13 @@ queue.
 =head2 queue_status( $fh, $queue, $sched )
 
 Display a summary of information about the C<$queue> and C<$sched>.
+
+=head2 convert_state_files( $fh, $queue, $sched, $fmt )
+
+Convert the state files for the C<$queue> and C<$sched> to the format described
+by C<$fmt> and exit the program. At the end of conversion, C<die> with an indication
+that we should restart the program. The C<$queue> and C<$sched> objects are not safe
+to execute at this time.
 
 =head1 DIAGNOSTICS
 

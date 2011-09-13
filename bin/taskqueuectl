@@ -88,6 +88,11 @@ sub safe_run {
     my ($ctrl, @args) = @_;
 
     eval { $ctrl->run( @args ); 1; } or do {
+        if ( $@ eq "Must Restart\n" ) {
+
+            # Command requested a restart.
+            exit 0;
+        }
         print "$@\nSupported commands:\n\n";
         print join( "\n", $ctrl->synopsis() ), "\n\n";
         return 1;

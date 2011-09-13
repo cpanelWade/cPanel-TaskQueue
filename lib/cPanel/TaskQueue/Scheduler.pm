@@ -43,12 +43,7 @@ sub import {
             cPanel::StateFile->import( '-logger' => $module );
         }
         elsif( '-serializer' eq $policy ) {
-            unless ( ref $module ) {
-                eval "use $module;"; ## no critic (ProhibitStringyEval)
-                die $@ if $@;
-            }
-            die 'Supplied serializer object does not support the correct interface.'
-                unless _valid_serializer( $module );
+            _load_serializer_module( $module );
             $the_serializer = $module;
         }
         else {
@@ -57,6 +52,17 @@ sub import {
     }
     $are_policies_set = 1;
     return 1;
+}
+
+sub _load_serializer_module {
+    my ($module) = @_;
+    die "Supplied serializer must be a module name.\n" if ref $module;
+    die "'$module' does not look like a serializer" unless $module =~ m{^\w+(?:::\w+)*$};
+    eval "use $module;"; ## no critic (ProhibitStringyEval)
+    die $@ if $@;
+    die 'Supplied serializer object does not support the correct interface.'
+        unless _valid_serializer( $module );
+    return;
 }
 
 sub _valid_serializer {
@@ -168,6 +174,13 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
     sub info {
         my $self = shift;
         return $self->{disk_state} ? $self->{disk_state}->info( @_ ) : undef;
+    }
+
+    # -------------------------------------------------------
+    # Pseudo-private methods. Should not be called except under unusual circumstances.
+    sub _serializer {
+        my ($self) = @_;
+        return $self->{serializer};
     }
 
     # -------------------------------------------------------

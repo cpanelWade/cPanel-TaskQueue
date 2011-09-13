@@ -53,12 +53,7 @@ sub import {
             cPanel::StateFile->import( '-logger' => $module );
         }
         elsif( '-serializer' eq $policy ) {
-            unless ( ref $module ) {
-                eval "use $module;"; ## no critic (ProhibitStringyEval)
-                die $@ if $@;
-            }
-            die 'Supplied serializer object does not support the correct interface.'
-                unless _valid_serializer( $module );
+            _load_serializer_module( $module );
             $the_serializer = $module;
         }
         else {
@@ -67,6 +62,17 @@ sub import {
     }
     $are_policies_set = 1;
     return 1;
+}
+
+sub _load_serializer_module {
+    my ($module) = @_;
+    die "Supplied serializer must be a module name.\n" if ref $module;
+    die "'$module' does not look like a serializer" unless $module =~ m{^\w+(?:::\w+)*$};
+    eval "use $module;"; ## no critic (ProhibitStringyEval)
+    die $@ if $@;
+    die 'Supplied serializer object does not support the correct interface.'
+        unless _valid_serializer( $module );
+    return;
 }
 
 sub _valid_serializer {
@@ -184,6 +190,7 @@ my $taskqueue_uuid = 'TaskQueue';
             disk_state            => undef,
             defer_obj             => undef,
             paused                => 0,
+            serializer            => _get_serializer(),
         }, $class;
 
         # Make a disk file to track the object.
@@ -237,13 +244,26 @@ my $taskqueue_uuid = 'TaskQueue';
         my $self = shift;
         return $self->{disk_state} ? $self->{disk_state}->info( @_ ) : undef;
     }
+
+    # -------------------------------------------------------
+    # Pseudo-private methods. Should not be called except under unusual circumstances.
+    sub _serializer {
+        my ($self) = @_;
+        return $self->{serializer};
+    }
+
+    sub _state_file {
+        my ($self) = @_;
+        return $self->{disk_state_file};
+    }
+
     # -------------------------------------------------------
     # Public methods
     sub load_from_cache {
         my ($self, $fh) = @_;
 
         local $/;
-        my ($magic, $version, $meta) = _get_serializer()->load( $fh );
+        my ($magic, $version, $meta) = $self->_serializer()->load( $fh );
 
         $self->throw( 'Not a recognized TaskQueue state file.' ) unless defined $magic and $magic eq $FILETYPE;
         $self->throw( 'Invalid version of TaskQueue state file.' ) unless defined $version and $version eq $CACHE_VERSION;
@@ -289,7 +309,7 @@ my $taskqueue_uuid = 'TaskQueue';
             paused           => ( $self->{paused} ? 1 : 0 ),
             defer_obj        => $self->{defer_obj},
         };
-        return _get_serializer()->save( $fh, $FILETYPE, $CACHE_VERSION, $meta );
+        return $self->_serializer()->save( $fh, $FILETYPE, $CACHE_VERSION, $meta );
     }
 
     sub queue_task {

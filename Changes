@@ -1,6 +1,11 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
+       Add support for serializing the queue and scheduler data in Storable
+       format as well as YAML.
+       Default the queue and scheduler to Storable for serialization.
+       Provide command in taskqueuectl to convert from one serialization format
+       to another.
 0.504     2011-07-28 12:14:24 America/Chicago
        Testing had shown no more problems. Upgrading to an official release.
 0.503_04  2011-07-15 13:26:37 America/Chicago

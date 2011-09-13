@@ -12,6 +12,11 @@ use cPanel::TaskQueue::Scheduler     ();
 use cPanel::TaskQueue::PluginManager ();
 use Text::Wrap                       ();
 
+my %format = (
+    storable => 'cPanel::TQSerializer::Storable',
+    yaml     => 'cPanel::TQSerializer::YAML',
+);
+
 my @required = qw(qdir qname);
 my %validate = (
     'qdir'   => sub { return -d $_[0]; },
@@ -20,6 +25,7 @@ my %validate = (
     'sname'  => sub { return defined $_[0] && length $_[0]; },
     'logger' => sub { return 1; },
     'out'    => sub { return 1; },
+    'serial' => sub { return exists $format{lc $_[0]}; },
 );
 
 my %commands = (
@@ -86,6 +92,12 @@ my %commands = (
         synopsis => 'status',
         help     => '    Print the status of the Task Queue and Scheduler.',
     },
+    convert => {
+        code     => \&convert_state_files,
+        synopsis => 'convert {newformat}',
+        help     => '    Convert the TaskQueue and Scheduler state files from the current format
+    to the newly specified format. Valid strings for the format are "storable" or "yaml".'
+    }
 );
 
 sub new {
@@ -399,6 +411,38 @@ sub queue_status {
         print $fh "\tTime to next:\t$seconds\n" if defined $seconds;
     }
     print $fh "\n";
+}
+
+sub convert_state_files {
+    my ($fh, $queue, $sched, $fmt) = @_;
+
+    $fmt = lc $fmt;
+    unless ( exists $format{$fmt} ) {
+        print $fh "'$fmt' is not a valid format.\n";
+        return;
+    }
+    my $new_serial = $format{$fmt};
+    _convert_a_state_file( $queue, $new_serial );
+    _convert_a_state_file( $sched, $new_serial );
+    print $fh "Since the format of the state files have changed, we cannot continue. Reload program specifying new serializer.\n";
+    die "Must Restart\n";
+}
+
+sub _convert_a_state_file {
+    my ($q, $new_serial) = @_;
+
+    my $curr_serial = $q->_serializer();
+    if( $new_serial ne $curr_serial ) {
+        my $curr_state_file = $q->_state_file();
+        my $new_state_file = $new_serial->filename( substr( $curr_state_file, 0, rindex( $curr_state_file, '.' ) ) );
+        open my $ifh, '<', $curr_state_file or die "Unable to read '$curr_state_file': $!\n";
+        open my $ofh, '>', $new_state_file or die "Unable to write '$new_state_file': $!\n";
+        $new_serial->save( $ofh, $curr_serial->load( $ifh ) );
+        close $ofh;
+        close $ifh;
+        unlink "$curr_state_file.orig";
+        rename $curr_state_file, "$curr_state_file.orig";
+    }
 }
 
 sub _print_task {
