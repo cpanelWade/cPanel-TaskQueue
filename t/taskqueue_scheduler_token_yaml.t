@@ -6,7 +6,7 @@ use strict;
 use warnings;
 
 use File::Path ();
-use cPanel::TaskQueue::Scheduler();
+use cPanel::TaskQueue::Scheduler( '-serializer' => 'cPanel::TQSerializer::YAML' );
 
 my $tmpdir = './tmp';
 my $statedir = "$tmpdir/taskqueue";
@@ -51,17 +51,17 @@ eval {
 like( $@, qr/Invalid token./, 'No third part' );
 
 eval {
-    cPanel::TaskQueue::Scheduler->new( {token=> 'xyzzy:|:fred:|:tasks_sched.stor'} );
+    cPanel::TaskQueue::Scheduler->new( {token=> 'xyzzy:|:fred:|:tasks_sched.yaml'} );
 };
 like( $@, qr/Invalid token./, 'Version does not match' );
 
 eval {
-    cPanel::TaskQueue::Scheduler->new( {token=> 'tqsched1:|:fred:|:tasks_sched.stor'} );
+    cPanel::TaskQueue::Scheduler->new( {token=> 'tqsched1:|:fred:|:tasks_sched.yaml'} );
 };
 like( $@, qr/Invalid token./, 'Name does not match' );
 
 eval {
-    cPanel::TaskQueue::Scheduler->new( {token=> 'tqsched1:|:tasks|:fred_sched.stor'} );
+    cPanel::TaskQueue::Scheduler->new( {token=> 'tqsched1:|:tasks|:fred_sched.yaml'} );
 };
 like( $@, qr/Invalid token./, 'File does not match' );
 

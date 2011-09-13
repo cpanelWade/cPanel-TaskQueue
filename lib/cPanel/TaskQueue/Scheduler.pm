@@ -9,7 +9,6 @@ package cPanel::TaskQueue::Scheduler;
 
 use strict;
 #use warnings;
-use YAML::Syck             ();     # Data Serialization
 use cPanel::TaskQueue      ();
 use cPanel::TaskQueue::Task();
 use cPanel::StateFile      ();
@@ -26,6 +25,7 @@ use cPanel::StateFile      ();
 #   to supply 'seam' that could be used to modify the logging behavior of the
 #   StateFile.
 my $are_policies_set = 0;
+my $the_serializer;
 my $pkg = __PACKAGE__;
 
 #
@@ -42,12 +42,38 @@ sub import {
         if ( '-logger' eq $policy ) {
             cPanel::StateFile->import( '-logger' => $module );
         }
+        elsif( '-serializer' eq $policy ) {
+            unless ( ref $module ) {
+                eval "use $module;"; ## no critic (ProhibitStringyEval)
+                die $@ if $@;
+            }
+            die 'Supplied serializer object does not support the correct interface.'
+                unless _valid_serializer( $module );
+            $the_serializer = $module;
+        }
         else {
             die "Unrecognized policy '$policy'\n";
         }
     }
     $are_policies_set = 1;
     return 1;
+}
+
+sub _valid_serializer {
+    my ($serializer) = @_;
+    foreach my $method ( qw/load save filename/ ) {
+        return unless eval { $serializer->can( $method ) };
+    }
+    return 1;
+}
+
+sub _get_serializer {
+    unless ( defined $the_serializer ) {
+        eval 'use cPanel::TQSerializer::Storable;';  ## no crititc (ProhibitStringyEval)
+        cPanel::StateFile->_throw( @_ ) if $@;
+        $the_serializer = 'cPanel::TQSerializer::Storable';
+    }
+    return $the_serializer;
 }
 
 # Replacement for List::Util::first, so I don't need to bring in the whole module.
@@ -88,8 +114,9 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
             cPanel::StateFile->_throw( 'Invalid token.' )
                 unless defined $version and defined $name and defined $file;
             # all parts make sense.
+            my $name_match = _get_serializer()->filename( "${name}_sched" );
             cPanel::StateFile->_throw( 'Invalid token.' )
-                unless 'tqsched1' eq $version and $file =~ m{/\Q$name\E_sched\.yaml$};
+                unless 'tqsched1' eq $version and $file =~ m{/\Q$name_match\E$};
 
             $self->{scheduler_name} = $name;
             $self->{disk_state_file} = $file;
@@ -99,7 +126,7 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
             cPanel::StateFile->_throw( 'No caching directory supplied.' ) unless exists $args_ref->{state_dir};
             cPanel::StateFile->_throw( 'No scheduler name supplied.' ) unless exists $args_ref->{name};
 
-            $self->{disk_state_file} = "$args_ref->{state_dir}/$args_ref->{name}_sched.yaml";
+            $self->{disk_state_file} = _get_serializer()->filename( "$args_ref->{state_dir}/$args_ref->{name}_sched" );
             $self->{scheduler_name} = $args_ref->{name};
         }
 
@@ -149,10 +176,10 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
         my ($self, $fh) = @_;
 
         local $/;
-        my ($magic, $version, $meta) = YAML::Syck::Load( scalar <$fh> );
+        my ($magic, $version, $meta) = _get_serializer()->load( $fh );
 
-        $self->throw( "Not a recognized TaskQueue Scheduler state file.\n" ) unless $magic eq $FILETYPE;
-        $self->throw( "Invalid version of TaskQueue Scheduler state file.\n" ) unless $version eq $CACHE_VERSION;
+        $self->throw( "Not a recognized TaskQueue Scheduler state file.\n" ) unless defined $magic and $magic eq $FILETYPE;
+        $self->throw( "Invalid version of TaskQueue Scheduler state file.\n" ) unless defined $version and $version eq $CACHE_VERSION;
 
         # Next id should continue increasing.
         #   (We might want to deal with wrap-around at some point.)
@@ -171,7 +198,7 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
             nextid        => $self->{next_id},
             waiting_queue => $self->{time_queue},
         };
-        return print $fh YAML::Syck::Dump( $FILETYPE, $CACHE_VERSION, $meta );
+        return _get_serializer()->save( $fh, $FILETYPE, $CACHE_VERSION, $meta );
     }
 
     sub schedule_task {

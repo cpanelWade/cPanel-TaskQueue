@@ -1,6 +1,6 @@
 package cPanel::TaskQueue;
 
-# cpanel - cPanel/TaskQueue.pm                    Copyright(c) 2010 cPanel, Inc.
+# cpanel - cPanel/TaskQueue.pm                    Copyright(c) 2011 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 #
@@ -11,7 +11,6 @@ package cPanel::TaskQueue;
 
 use strict;
 #use warnings;
-use YAML::Syck             ();     # Data Serialization
 use cPanel::TaskQueue::Task();
 use cPanel::TaskQueue::Processor();
 use cPanel::StateFile      ();
@@ -36,6 +35,7 @@ if ( !$WNOHANG ) {
 # object and polymorphism into the mix.
 
 my $are_policies_set = 0;
+my $the_serializer;
 
 #
 # This method allows changing the policies for logging and locking.
@@ -48,8 +48,18 @@ sub import {
     while ( @_ ) {
         my ($policy,$module) = splice( @_, 0, 2 );
         my @methods = ();
+        my @sf_policies;
         if ( '-logger' eq $policy ) {
             cPanel::StateFile->import( '-logger' => $module );
+        }
+        elsif( '-serializer' eq $policy ) {
+            unless ( ref $module ) {
+                eval "use $module;"; ## no critic (ProhibitStringyEval)
+                die $@ if $@;
+            }
+            die 'Supplied serializer object does not support the correct interface.'
+                unless _valid_serializer( $module );
+            $the_serializer = $module;
         }
         else {
             die "Unrecognized policy '$policy'\n";
@@ -57,6 +67,23 @@ sub import {
     }
     $are_policies_set = 1;
     return 1;
+}
+
+sub _valid_serializer {
+    my ($serializer) = @_;
+    foreach my $method ( qw/load save filename/ ) {
+        return unless eval { $serializer->can( $method ) };
+    }
+    return 1;
+}
+
+sub _get_serializer {
+    unless ( defined $the_serializer ) {
+        eval 'use cPanel::TQSerializer::Storable;';  ## no crititc (ProhibitStringyEval)
+        cPanel::StateFile->_throw( @_ ) if $@;
+        $the_serializer = 'cPanel::TQSerializer::Storable';
+    }
+    return $the_serializer;
 }
 
 # Replacement for List::Util::first, so I don't need to bring in the whole module.
@@ -149,7 +176,7 @@ my $taskqueue_uuid = 'TaskQueue';
             max_task_timeout      => 300,
             max_in_process        => 2,
             default_child_timeout => 3600,
-            disk_state_file       => "$args_ref->{state_dir}/$args_ref->{name}_queue.yaml",
+            disk_state_file       => _get_serializer()->filename( "$args_ref->{state_dir}/$args_ref->{name}_queue" ),
             next_id               => 1,
             queue_waiting         => [],
             processing_list       => [],
@@ -216,10 +243,10 @@ my $taskqueue_uuid = 'TaskQueue';
         my ($self, $fh) = @_;
 
         local $/;
-        my ($magic, $version, $meta) = YAML::Syck::Load( scalar <$fh> );
+        my ($magic, $version, $meta) = _get_serializer()->load( $fh );
 
-        $self->throw( 'Not a recognized TaskQueue state file.' ) unless $magic eq $FILETYPE;
-        $self->throw( 'Invalid version of TaskQueue state file.' ) unless $version eq $CACHE_VERSION;
+        $self->throw( 'Not a recognized TaskQueue state file.' ) unless defined $magic and $magic eq $FILETYPE;
+        $self->throw( 'Invalid version of TaskQueue state file.' ) unless defined $version and $version eq $CACHE_VERSION;
 
         # Next id should continue increasing.
         #   (We might want to deal with wrap-around at some point.)
@@ -262,7 +289,7 @@ my $taskqueue_uuid = 'TaskQueue';
             paused           => ( $self->{paused} ? 1 : 0 ),
             defer_obj        => $self->{defer_obj},
         };
-        return print $fh YAML::Syck::Dump( $FILETYPE, $CACHE_VERSION, $meta );
+        return _get_serializer()->save( $fh, $FILETYPE, $CACHE_VERSION, $meta );
     }
 
     sub queue_task {
