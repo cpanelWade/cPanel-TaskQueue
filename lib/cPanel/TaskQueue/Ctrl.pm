@@ -1,6 +1,6 @@
 package cPanel::TaskQueue::Ctrl;
 
-# cpanel - cPanel/TaskQueue/Ctrl.pm               Copyright(c) 2009 cPanel, Inc.
+# cpanel - cPanel/TaskQueue/Ctrl.pm               Copyright(c) 2011 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 
@@ -133,7 +133,7 @@ sub run {
 sub synopsis {
     my ( $self, $cmd ) = @_;
 
-    if ($cmd) {
+    if ($cmd && exists $commands{$cmd}) {
         return $commands{$cmd}->{'synopsis'}, '';
     }
     return map { $commands{$_}->{'synopsis'}, '' } sort keys %commands;
@@ -141,7 +141,7 @@ sub synopsis {
 
 sub help {
     my ( $self, $cmd ) = @_;
-    if ($cmd) {
+    if ($cmd && exists $commands{$cmd}) {
         return @{ $commands{$cmd} }{ 'synopsis', 'help' }, '';
     }
     return map { @{ $commands{$_} }{ 'synopsis', 'help' }, '' } sort keys %commands;
@@ -473,7 +473,7 @@ sub _verbosely_print_task {
 
 __END__
 
-Copyright (c) 2010, cPanel, Inc. All rights reserved.
+Copyright (c) 2011, cPanel, Inc. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
