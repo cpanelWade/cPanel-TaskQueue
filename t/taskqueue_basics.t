@@ -8,7 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin/mocks";
 use File::Path ();
 
-use Test::More tests => 41;
+use Test::More tests => 42;
 use cPanel::TaskQueue;
 
 my $tmpdir = './tmp';
@@ -22,6 +22,9 @@ File::Path::mkpath( $tmpdir ) or die "Unable to create tmpdir: $!";
 my $queue = cPanel::TaskQueue->new( { name => 'tasks', state_dir => $statedir } );
 isa_ok( $queue, 'cPanel::TaskQueue', 'Correct object built.' );
 is( $queue->get_name, 'tasks', 'Queue is named correctly.' );
+
+# Internal method, just verifying it's correct.
+is( $queue->_state_file, "$statedir/tasks_queue.stor", 'State file is expected.' );
 
 # Queue a simple item
 my $qid = $queue->queue_task( 'noop 1 2 3' );

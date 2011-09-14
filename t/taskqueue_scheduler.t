@@ -13,7 +13,7 @@ use FindBin;
 use lib "$FindBin::Bin/mocks";
 use File::Path ();
 
-use Test::More tests => 84;
+use Test::More tests => 85;
 use cPanel::TaskQueue::Scheduler;
 
 my $tmpdir = './tmp';
@@ -32,6 +32,9 @@ my $sched = cPanel::TaskQueue::Scheduler->new(
     { name => 'tasks', state_dir => $statedir }
 );
 isa_ok( $sched, 'cPanel::TaskQueue::Scheduler', 'Correct object built.' );
+
+# Internal method, do not use
+is( $sched->_state_file, "$statedir/tasks_sched.stor", 'State file has correct form.' );
 
 # Check failures to schedule
 eval {
