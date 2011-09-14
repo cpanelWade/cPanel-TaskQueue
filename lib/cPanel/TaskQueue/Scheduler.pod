@@ -5,7 +5,7 @@ cPanel::TaskQueue::Scheduler - Priority queue of Tasks to Queue at some time in 
 
 =head1 VERSION
 
-This document describes cPanel::TaskQueue::Scheduler version 0.504.
+This document describes cPanel::TaskQueue::Scheduler version 0.600.
 
 =head1 SYNOPSIS
 

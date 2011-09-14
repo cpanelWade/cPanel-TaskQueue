@@ -5,7 +5,7 @@
 
 =head1 VERSION
 
-    This document describes cPanel::TaskQueue::ChildProcessor version 0.504.
+    This document describes cPanel::TaskQueue::ChildProcessor version 0.600.
 
 =head1 SYNOPSIS
 
