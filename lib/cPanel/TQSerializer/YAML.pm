@@ -12,6 +12,7 @@ use strict;
 
 sub load {
     my ($class, $fh) = @_;
+    local $/;
     return YAML::Syck::Load( scalar <$fh> );
 }
 
