@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# cpanel - bin/taskqueuectl                       Copyright(c) 2010 cPanel, Inc.
+# cpanel - bin/taskqueuectl                       Copyright(c) 2011 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 
@@ -13,6 +13,10 @@ use Getopt::Long;
 use Term::ReadLine;
 
 my $term;
+my @shell_help = (
+    [ 'shell', '    Provide a command prompt where you can execute multiple commands.' ],
+    [ 'quit',  '    Exit the shell.' ],
+);
 
 main() unless caller;
 
@@ -24,6 +28,7 @@ sub main {
     my $namespaces = [];
     my $plugins    = [];
     my $logfile;
+    my $serial;
 
     handle_config_file( 'taskqueue.cfg' );
 
@@ -35,6 +40,7 @@ sub main {
         'namespace=s@', \$namespaces,
         'plugin=s@',    \$plugins,
         'logfile=s',    \$logfile,     # keep config file compatible between tools.
+        'serial=s',     \$serial,
     );
 
     $namespaces = [ 'cPanel::TaskProcessors', ] unless @{$namespaces};
@@ -44,26 +50,61 @@ sub main {
 
     load_plugins( $plugindirs, $namespaces, $plugins );
 
-    my $ctrl = cPanel::TaskQueue::Ctrl->new( { 'qdir' => $queue_dir, 'qname' => $qname, 'sname' => $sname } );
+    my $ctrl = cPanel::TaskQueue::Ctrl->new( { 'qdir' => $queue_dir, 'qname' => $qname, 'sname' => $sname, 'serial' => $serial } );
 
     process_command( $ctrl );
     exit 0;
 }
+
+sub _man {
+    my ($ctrl) = shift;
+    unless (@_) {
+        print "\n", map { $_, "\n" } $ctrl->help(), map { @{$_}, '' } @shell_help;
+    }
+    elsif ($_[0] eq 'shell') {
+        local $" = "\n";
+        print "\n@{$shell_help[0]}\n\n";
+    }
+    elsif ($_[0] eq 'quit') {
+        local $" = "\n";
+        print "\n@{$shell_help[1]}\n\n";
+    }
+    else {
+        print "\n", map { $_, "\n" } $ctrl->help( @_ );
+    }
+}
+
+sub _help {
+    my ($ctrl) = shift;
+    unless (@_) {
+        print "\n", map { $_, "\n" } $ctrl->synopsis(), map { $_->[0], '' } @shell_help;
+    }
+    elsif ($_[0] eq 'shell') {
+        print "\n$shell_help[0]->[0]\n\n";
+    }
+    elsif ($_[0] eq 'quit') {
+        print "\n$shell_help[1]->[0]\n\n";
+    }
+    else {
+        print "\n", map { $_, "\n" } $ctrl->synopsis( @_ );
+    }
+}
+
 
 sub process_command {
     my ($ctrl) = @_;
 
     unless ( @ARGV ) {
         print "Missing command argument.\nUsage:\n\n";
-        print join( "\n", $ctrl->help() ), "\n\n";
+        print join( "\n", $ctrl->help(), @shell_help ), "\n\n";
         exit;
     }
 
     if ( $ARGV[0] eq 'shell' ) {
         @ARGV = ();
         my %cmds = (
-            man => sub { print "\n", map { $_, "\n" } $ctrl->help( @_ ); },
-            help => sub { print "\n", map { $_, "\n" } $ctrl->synopsis( @_ ); },
+            man => sub { _man( $ctrl, @_ ); },
+            help => sub { _help( $ctrl, @_ ); },
         );
 
         while ( 1 ) {
@@ -142,7 +183,7 @@ sub load_plugins {
 
 sub handle_config_file {
     my ($config) = @_;
-    if ( $ARGV[0] =~ /^\@(.*)$/ ) {
+    if ( @ARGV and $ARGV[0] =~ /^\@(.*)$/ ) {
         $config = $1;
         shift @ARGV;
     }
@@ -155,8 +196,8 @@ sub config_file {
     local $/;
     my $cfg = <$fh>;
     close $fh;
-    $cfg =~ s/#.*\n/\n/g;
-    tr/\n/ /s;
+    $cfg =~ s/#.*?\n/\n/g;
+    $cfg =~ tr/\n/ /s;
     return split( ' ', $cfg );
 }
 
@@ -266,6 +307,12 @@ searched for plugins. Instead, only the specified plugins are loaded.
 
 This parameter is not actually used. But it is supported so that the
 configuration of all of the tools is consistent.
+
+=item --serial={serializer}
+
+This optional parameter allows easy selection of serialization format of the
+state files. The value may be C<storable> or C<yaml>. If not supplied, the
+program uses the default serialization format (C<storable>).
 
 =back
 
@@ -386,7 +433,7 @@ No outstanding bugs.
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2010, cPanel, Inc. All rights reserved.
+Copyright (c) 2011, cPanel, Inc. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
