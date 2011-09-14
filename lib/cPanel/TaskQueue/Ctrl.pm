@@ -96,7 +96,8 @@ my %commands = (
         code     => \&convert_state_files,
         synopsis => 'convert {newformat}',
         help     => '    Convert the TaskQueue and Scheduler state files from the current format
-    to the newly specified format. Valid strings for the format are "storable" or "yaml".'
+    to the newly specified format. Valid strings for the format are "storable" or
+    "yaml".'
     }
 );
 
@@ -150,8 +151,10 @@ sub _get_queue {
     my ($self) = @_;
     return cPanel::TaskQueue->new(
         {
-            name => $self->{qname}, state_dir => $self->{qdir},
+            name => $self->{qname},
+            state_dir => $self->{qdir},
             ( exists $self->{logger} ? ( logger => $self->{logger} ) : () ),
+            ( defined $self->{serial} ? ( serial => $format{lc $self->{serial}} ) : () ),
         }
     );
 }
@@ -165,8 +168,10 @@ sub _get_scheduler {
     return undef unless exists $self->{sdir};    ## no critic (ProhibitExplicitReturnUndef)
     return cPanel::TaskQueue::Scheduler->new(
         {
-            name => $self->{sname}, state_dir => $self->{sdir},
+            name => $self->{sname},
+            state_dir => $self->{sdir},
             ( exists $self->{logger} ? ( logger => $self->{logger} ) : () ),
+            ( defined $self->{serial} ? ( serial => $format{lc $self->{serial}} ) : () ),
         }
     );
 }
@@ -422,6 +427,8 @@ sub convert_state_files {
         return;
     }
     my $new_serial = $format{$fmt};
+    eval "use $new_serial;";
+    die "Unable to load serializer module '$new_serial': $@" if $@;
     _convert_a_state_file( $queue, $new_serial );
     _convert_a_state_file( $sched, $new_serial );
     print $fh "Since the format of the state files have changed, we cannot continue. Reload program specifying new serializer.\n";
