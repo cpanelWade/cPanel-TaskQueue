@@ -114,6 +114,11 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
             disk_state => undef,
         }, $class;
 
+        if ( defined $args_ref->{serial} ) {
+            _load_serializer_module( $args_ref->{serial} );
+            $self->{serializer} = $args_ref->{serial};
+        }
+        $self->{serializer} ||= _get_serializer();
         if ( exists $args_ref->{token} ) {
             my ($version,$name,$file) = split( ':\|:', $args_ref->{token} );
             # have all parts
@@ -132,8 +137,8 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
             cPanel::StateFile->_throw( 'No caching directory supplied.' ) unless exists $args_ref->{state_dir};
             cPanel::StateFile->_throw( 'No scheduler name supplied.' ) unless exists $args_ref->{name};
 
-            $self->{disk_state_file} = _get_serializer()->filename( "$args_ref->{state_dir}/$args_ref->{name}_sched" );
-            $self->{scheduler_name} = $args_ref->{name};
+            $self->{disk_state_file} = $self->_serializer()->filename( "$args_ref->{state_dir}/$args_ref->{name}_sched" );
+            $self->{scheduler_name}  = $args_ref->{name};
         }
 
         # Make a disk file to track the object.
@@ -183,13 +188,18 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
         return $self->{serializer};
     }
 
+    sub _state_file {
+        my ($self) = @_;
+        return $self->{disk_state_file};
+    }
+
     # -------------------------------------------------------
     # Public methods
     sub load_from_cache {
         my ($self, $fh) = @_;
 
         local $/;
-        my ($magic, $version, $meta) = _get_serializer()->load( $fh );
+        my ($magic, $version, $meta) = $self->_serializer()->load( $fh );
 
         $self->throw( "Not a recognized TaskQueue Scheduler state file.\n" ) unless defined $magic and $magic eq $FILETYPE;
         $self->throw( "Invalid version of TaskQueue Scheduler state file.\n" ) unless defined $version and $version eq $CACHE_VERSION;
@@ -211,7 +221,7 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
             nextid        => $self->{next_id},
             waiting_queue => $self->{time_queue},
         };
-        return _get_serializer()->save( $fh, $FILETYPE, $CACHE_VERSION, $meta );
+        return $self->_serializer()->save( $fh, $FILETYPE, $CACHE_VERSION, $meta );
     }
 
     sub schedule_task {

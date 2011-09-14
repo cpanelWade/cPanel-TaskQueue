@@ -70,7 +70,7 @@ sub _load_serializer_module {
     die "'$module' does not look like a serializer" unless $module =~ m{^\w+(?:::\w+)*$};
     eval "use $module;"; ## no critic (ProhibitStringyEval)
     die $@ if $@;
-    die 'Supplied serializer object does not support the correct interface.'
+    die "Supplied serializer module '$module' does not support the correct interface."
         unless _valid_serializer( $module );
     return;
 }
@@ -175,6 +175,12 @@ my $taskqueue_uuid = 'TaskQueue';
         cPanel::StateFile->_throw( "No state directory supplied.\n" ) unless exists $args_ref->{state_dir};
         cPanel::StateFile->_throw( "No queue name supplied.\n" ) unless exists $args_ref->{name};
 
+        my $serializer;
+        if ( defined $args_ref->{serial} ) {
+            _load_serializer_module( $args_ref->{serial} );
+            $serializer = $args_ref->{serial};
+        }
+        $serializer ||= _get_serializer();
         # TODO: Do I want to sanity check the arguments?
         my $self = bless {
             queue_name            => $args_ref->{name},
@@ -182,7 +188,7 @@ my $taskqueue_uuid = 'TaskQueue';
             max_task_timeout      => 300,
             max_in_process        => 2,
             default_child_timeout => 3600,
-            disk_state_file       => _get_serializer()->filename( "$args_ref->{state_dir}/$args_ref->{name}_queue" ),
+            disk_state_file       => $serializer->filename( "$args_ref->{state_dir}/$args_ref->{name}_queue" ),
             next_id               => 1,
             queue_waiting         => [],
             processing_list       => [],
@@ -190,7 +196,7 @@ my $taskqueue_uuid = 'TaskQueue';
             disk_state            => undef,
             defer_obj             => undef,
             paused                => 0,
-            serializer            => _get_serializer(),
+            serializer            => $serializer,
         }, $class;
 
         # Make a disk file to track the object.
