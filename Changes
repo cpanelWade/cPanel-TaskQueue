@@ -1,6 +1,7 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
+0.601     2011-09-15 16:19:13 America/Chicago
        Better handling of conversion of state files in taskqueuectrl.
        Add 'info' command that displays serialization information.
        Corrected error is pause/resume handling.
