@@ -104,7 +104,15 @@ my %commands = (
         synopsis => 'info',
         help     => '    Display current information about the TaskQueue, Scheduler, and the Ctrl
     object.',
-    }
+    },
+    process => {
+        code     => \&process_one_step,
+        synopsis => 'process [verbose] [scheduled|waiting]',
+        help     => '    Process the requested queue items. If called with the "waiting" argument,
+    one waiting task is started if we have space in the active queue. If called with the
+    "scheduled" argument, any scheduled items that have reached their activation time will be
+    queued. Otherwise, both actions will be performed. Use the "verbose" flag for more output.'
+    },
 );
 
 sub new {
@@ -451,6 +459,37 @@ sub display_queue_info {
     print $fh "TaskQueue file: ", $queue->_state_file(), "\n";
     print $fh "Scheduler file: ", $sched->_state_file(), "\n";
     return;
+}
+
+sub process_one_step {
+    my ($ctrl, $fh, $queue, $sched, @args) = @_;
+    my $argcnt = @args;
+    @args = grep { 'verbose' ne $_ } @args;
+    my $verbose = $argcnt > @args;
+    @args = qw/scheduled waiting/ unless grep { 'scheduled' eq $_ or 'waiting' eq $_ } @args;
+    eval {
+        if ( _any_is( 'scheduled', @args ) ) {
+            my $cnt = $sched->process_ready_tasks( $queue );
+            if ( $cnt ) {
+                print $fh "$cnt scheduled tasks moved to queue.\n" if $verbose;
+            }
+            else {
+                print $fh "No scheduled tasks ready to queue.\n" if $verbose;
+            }
+        }
+        if ( _any_is( 'waiting', @args ) ) {
+            if ( $queue->has_work_to_do() ) {
+                $queue->process_next_task();
+                print "Activated a queued task.\n" if $verbose;
+            }
+            else {
+                print "No work to do at this time.\n" if $verbose;
+            }
+        }
+        1;
+    } or do {
+        print $fh "Exception detected: $@";
+    };
 }
 
 sub _print_task {

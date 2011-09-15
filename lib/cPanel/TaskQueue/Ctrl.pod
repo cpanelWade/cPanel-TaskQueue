@@ -203,6 +203,34 @@ Write general infomration about the TaskQueue and Scheduler to the supplied
 filehandle. The information includes the serialization type, and the full names
 of the state files for C<$queue> and C<$sched> objects.
 
+=head2 process_one_step( $ctrl, $fh, $queue, $sched, @args )
+
+Perform I<One step's worth> of processing on the queue, the scheduler, or both.
+How much processing is performed depends on the supplied arguments. The
+supported arguments are:
+
+=over 4
+
+=item verbose
+
+If this argument is supplied, the subroutine writes more output to the supplied
+file handle to tell the user what is happening.
+
+=item scheduled
+
+If this argument is supplied, any scheduled items that have reached their
+activation time will be queued.
+
+=item waiting
+
+If this argument is supplied, one waiting task is started if we have space in
+the active queue.
+
+=back
+
+If neither C<scheduled> or C<waiting> are supplied, the routine acts as if both
+were supplied.
+
 =head1 DIAGNOSTICS
 
 =over
