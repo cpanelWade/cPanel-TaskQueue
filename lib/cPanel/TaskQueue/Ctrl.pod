@@ -1,6 +1,3 @@
-# cpanel - cPanel/TaskQueue/Ctrl.pod              Copyright(c) 2011 cPanel, Inc.
-#                                                           All rights Reserved.
-# copyright@cpanel.net                                         http://cpanel.net
 
 =head1 NAME
 
@@ -9,7 +6,7 @@ cPanel::TaskQueue::Ctrl - A text-based interface for controlling a TaskQueue
 
 =head1 VERSION
 
-This document describes cPanel::TaskQueue::Ctrl version 0.600
+This document describes cPanel::TaskQueue::Ctrl version 0.601
 
 
 =head1 SYNOPSIS
