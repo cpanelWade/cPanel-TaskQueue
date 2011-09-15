@@ -103,7 +103,7 @@ Display a longer help message describing the commands supported by this object.
 Take a series of command strings as C<@commands>, use C<$queue> to queue each
 of commands as a task. Print the Id on success or an error message on failure.
 
-=head2 unqueue_tasks( $fh, $queue, $sched, @task_ids )
+=head2 unqueue_tasks( $ctrl, $fh, $queue, $sched, @task_ids )
 
 Given a list of Task ID strings, attempt to unqueue those tasks. Print a count
 of the number of tasks that were unqueued. This count could be less that the
@@ -112,7 +112,7 @@ been completed in the time the function is running.
 
 Print error messages for any unqueue attempt that fails.
 
-=head2 list_tasks( $fh, $queue, $sched, @options )
+=head2 list_tasks( $ctrl, $fh, $queue, $sched, @options )
 
 Print information about the tasks. The list of options modifies which tasks
 are printed and in how much detail. The supported options are:
@@ -141,7 +141,7 @@ Print the tasks that are scheduled to be queued at a later time.
 If none of C<active>, C<waiting>, and C<scheduled> are supplied, all three sets
 are printed.
 
-=head2 find_task( $fh, $queue, $sched, $subcmd, $match )
+=head2 find_task( $ctrl, $fh, $queue, $sched, $subcmd, $match )
 
 Find one or more tasks that match the supplied parameters. Print all of the
 tasks that were found.
@@ -154,17 +154,17 @@ If the C<$subcmd> has a value of C<command>, the C<$match> value is treated as
 a command name (without the arguments). This subcommand will print zero or more
 tasks.
 
-=head2 list_plugins( $fh, $queue, $sched, $option )
+=head2 list_plugins( $ctrl, $fh, $queue, $sched, $option )
 
 Print the names of the plugins to the screen. If the option parameter is the
 string C<'verbose'> print the commands for each plugin as well as the plugin
 name.
 
-=head2 list_commands( $fh, $queue, $sched )
+=head2 list_commands( $ctrl, $fh, $queue, $sched )
 
 Print the names of the commands supported by the loaded plugins.
 
-=head2 schedule_tasks( $fh, $queue, $sched, [ $subcmd, $value, ] @cmds )
+=head2 schedule_tasks( $ctrl, $fh, $queue, $sched, [ $subcmd, $value, ] @cmds )
 
 Schedule each of the commands in the C<@cmds> list as a separate task based at
 a time determined by the C<$subcmd> and C<$value>. There are two potential
@@ -184,22 +184,27 @@ Schedule the commands after the C<$value> number of seconds.
 
 If neither of these values applies, the commands will be scheduled right now.
 
-=head2 unschedule_tasks( $fh, $queue, $sched, @ids )
+=head2 unschedule_tasks( $ctrl, $fh, $queue, $sched, @ids )
 
 Unschedule each of the tasks specified by the list C<@id>. It's possible for
 a valid task to not be able to be unscheduled, if it has moved to the waiting
 queue.
 
-=head2 queue_status( $fh, $queue, $sched )
+=head2 queue_status( $ctrl, $fh, $queue, $sched )
 
 Display a summary of information about the C<$queue> and C<$sched>.
 
-=head2 convert_state_files( $fh, $queue, $sched, $fmt )
+=head2 convert_state_files( $ctrl, $fh, $queue, $sched, $fmt )
 
 Convert the state files for the C<$queue> and C<$sched> to the format described
-by C<$fmt> and exit the program. At the end of conversion, C<die> with an indication
-that we should restart the program. The C<$queue> and C<$sched> objects are not safe
-to execute at this time.
+by C<$fmt> and exit the program. Modify the $ctrl object to use the new
+serialization method on subsequent attempts to create the queue and scheduler.
+
+=head2 display_queue_info( $ctrl, $fh, $queue, $sched )
+
+Write general infomration about the TaskQueue and Scheduler to the supplied
+filehandle. The information includes the serialization type, and the full names
+of the state files for C<$queue> and C<$sched> objects.
 
 =head1 DIAGNOSTICS
 

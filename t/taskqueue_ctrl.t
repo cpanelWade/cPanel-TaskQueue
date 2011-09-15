@@ -32,7 +32,7 @@ my $output;
 my $ctrl = cPanel::TaskQueue::Ctrl->new( { qdir => $statedir, qname => 'test', out => \$output } );
 isa_ok( $ctrl, 'cPanel::TaskQueue::Ctrl' );
 
-my @commands = sort qw/queue pause resume unqueue schedule unschedule list find plugins commands status convert/;
+my @commands = sort qw/queue pause resume unqueue schedule unschedule list find plugins commands status convert info/;
 foreach my $cmd (@commands) {
     my @ret = $ctrl->synopsis( $cmd );
     like( $ret[0], qr/^$cmd/, "$cmd: Found synopsis" );

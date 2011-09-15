@@ -37,12 +37,12 @@ my %commands = (
     and each will be queued in turn.',
     },
     pause => {
-        code => sub { $_[1]->pause_processing(); return; },
+        code => sub { $_[2]->pause_processing(); return; },
         synopsis => 'pause',
         help     => '    Pause the processing of waiting tasks from the TaskQueue.',
     },
     resume => {
-        code => sub { $_[1]->resume_processing(); return; },
+        code => sub { $_[2]->resume_processing(); return; },
         synopsis => 'resume',
         help     => '    Resume the processing of waiting tasks from the TaskQueue.',
     },
@@ -98,6 +98,12 @@ my %commands = (
         help     => '    Convert the TaskQueue and Scheduler state files from the current format
     to the newly specified format. Valid strings for the format are "storable" or
     "yaml".'
+    },
+    info => {
+        code     => \&display_queue_info,
+        synopsis => 'info',
+        help     => '    Display current information about the TaskQueue, Scheduler, and the Ctrl
+    object.',
     }
 );
 
@@ -127,7 +133,7 @@ sub run {
     die "No command supplied to run.\n" unless $cmd;
     die "Unrecognized command '$cmd' to run.\n" unless exists $commands{$cmd};
 
-    $commands{$cmd}->{code}->( $self->{out}, $self->_get_queue(), $self->_get_scheduler(), @args );
+    $commands{$cmd}->{code}->( $self, $self->{out}, $self->_get_queue(), $self->_get_scheduler(), @args );
 }
 
 sub synopsis {
@@ -177,12 +183,10 @@ sub _get_scheduler {
 }
 
 sub queue_tasks {
-    my $fh    = shift;
-    my $queue = shift;
-    my $sched = shift;
-    die "No command to queue.\n" unless @_;
+    my ($ctrl, $fh, $queue, $sched, @cmds) = @_;
+    die "No command to queue.\n" unless @cmds;
 
-    foreach my $cmdstring (@_) {
+    foreach my $cmdstring (@cmds) {
         eval {
             print $fh "Id: ", $queue->queue_task($cmdstring), "\n";
             1;
@@ -194,15 +198,13 @@ sub queue_tasks {
 }
 
 sub unqueue_tasks {
-    my $fh    = shift;
-    my $queue = shift;
-    my $sched = shift;
-    die "No task ids to unqueue.\n" unless @_;
+    my ($ctrl, $fh, $queue, $sched, @tids) = @_;
+    die "No task ids to unqueue.\n" unless @tids;
 
     my $count = 0;
-    foreach my $ids (@_) {
+    foreach my $id (@tids) {
         eval {
-            ++$count if $queue->unqueue_task($ids);
+            ++$count if $queue->unqueue_task($id);
             1;
         } or do {
             print $fh "ERROR: $@\n";
@@ -213,25 +215,22 @@ sub unqueue_tasks {
 }
 
 sub schedule_tasks {
-    my $fh     = shift;
-    my $queue  = shift;
-    my $sched  = shift;
-    my $subcmd = shift;
+    my ($ctrl, $fh, $queue, $sched, $subcmd, @cmds) = @_;
     die "No command to schedule.\n" unless defined $subcmd;
 
     my $args = {};
     if ( $subcmd eq 'at' ) {
-        $args->{'at_time'} = shift;
+        $args->{'at_time'} = shift @cmds;
     }
     elsif ( $subcmd eq 'after' ) {
-        $args->{'delay_seconds'} = shift;
+        $args->{'delay_seconds'} = shift @cmds;
     }
     else {
-        unshift @_, $subcmd;
+        unshift @cmds, $subcmd;
     }
 
-    die "No command to schedule.\n" unless @_;
-    foreach my $cmdstring (@_) {
+    die "No command to schedule.\n" unless @cmds;
+    foreach my $cmdstring (@cmds) {
         eval {
             print $fh "Id: ", $sched->schedule_task( $cmdstring, $args ), "\n";
             1;
@@ -241,15 +240,13 @@ sub schedule_tasks {
 }
 
 sub unschedule_tasks {
-    my $fh    = shift;
-    my $queue = shift;
-    my $sched = shift;
-    die "No task ids to unschedule.\n" unless @_;
+    my ($ctrl, $fh, $queue, $sched, @tids) = @_;
+    die "No task ids to unschedule.\n" unless @tids;
 
     my $count = 0;
-    foreach my $ids (@_) {
+    foreach my $id (@tids) {
         eval {
-            ++$count if $sched->unschedule_task($ids);
+            ++$count if $sched->unschedule_task($id);
             1;
         } or do {
             print $fh "ERROR: $@\n";
@@ -269,10 +266,7 @@ sub _any_is {
 }
 
 sub find_task {
-    my $fh    = shift;
-    my $queue = shift;
-    my $sched = shift;
-    my ( $subcmd, $match ) = @_;
+    my ($ctrl, $fh, $queue, $sched, $subcmd, $match) = @_;
 
     if ( !defined $match ) {
         print $fh "No matching criterion.\n";
@@ -299,22 +293,21 @@ sub find_task {
     else {
         print $fh "No matching task found.\n";
     }
+    return;
 }
 
 sub list_tasks {
-    my $fh    = shift;
-    my $queue = shift;
-    my $sched = shift;
+    my ($ctrl, $fh, $queue, $sched, @subcmds) = @_;
     my $print = \&_print_task;
-    if ( _any_is( 'verbose', @_ ) ) {
+    if ( _any_is( 'verbose', @subcmds ) ) {
         $print = \&_verbosely_print_task;
-        @_ = grep { $_ ne 'verbose' } @_;
+        @subcmds = grep { $_ ne 'verbose' } @subcmds;
     }
 
-    @_ = qw/active deferred waiting scheduled/ unless @_;
+    @subcmds = qw/active deferred waiting scheduled/ unless @subcmds;
     my $lists = $queue->snapshot_task_lists;
 
-    if ( _any_is( 'active', @_ ) ) {
+    if ( _any_is( 'active', @subcmds ) ) {
         print $fh "Active Tasks\n-------------\n";
         if ( @{ $lists->{'processing'} } ) {
             foreach my $t ( @{ $lists->{'processing'} } ) {
@@ -323,7 +316,7 @@ sub list_tasks {
         }
     }
 
-    if ( _any_is( 'deferred', @_ ) ) {
+    if ( _any_is( 'deferred', @subcmds ) ) {
         print $fh "Deferred Tasks\n-------------\n";
         if ( @{ $lists->{'deferred'} } ) {
             foreach my $t ( @{ $lists->{'deferred'} } ) {
@@ -333,7 +326,7 @@ sub list_tasks {
         }
     }
 
-    if ( _any_is( 'waiting', @_ ) ) {
+    if ( _any_is( 'waiting', @subcmds ) ) {
         print $fh "Waiting Tasks\n-------------\n";
         if ( @{ $lists->{'waiting'} } ) {
             foreach my $t ( @{ $lists->{'waiting'} } ) {
@@ -344,7 +337,7 @@ sub list_tasks {
     }
 
     return unless $sched;
-    if ( _any_is( 'scheduled', @_ ) ) {
+    if ( _any_is( 'scheduled', @subcmds ) ) {
         my $sched_tasks = $sched->snapshot_task_schedule();
         print $fh "Scheduled Tasks\n---------------\n";
         if ( @{$sched_tasks} ) {
@@ -355,14 +348,13 @@ sub list_tasks {
             }
         }
     }
+    return;
 }
 
 sub list_plugins {
-    my $fh    = shift;
-    my $queue = shift;
-    my $sched = shift;
+    my ($ctrl, $fh, $queue, $sched, $verbosity) = @_;
 
-    if ( defined $_[0] && $_[0] eq 'verbose' ) {
+    if ( defined $verbosity && $verbosity eq 'verbose' ) {
         my $plugins = cPanel::TaskQueue::PluginManager::get_plugins_hash();
         foreach my $plug ( sort keys %{$plugins} ) {
             print $fh "* $plug\n\t", join( "\n\t", map { "- $_" } sort @{ $plugins->{$plug} } ), "\n\n";
@@ -371,13 +363,11 @@ sub list_plugins {
     else {
         print $fh join( "\n", map { "* $_" } cPanel::TaskQueue::PluginManager::list_loaded_plugins() ), "\n\n";
     }
+    return;
 }
 
 sub list_commands {
-    my $fh     = shift;
-    my $queue  = shift;
-    my $sched  = shift;
-    my $module = shift;
+    my ($ctrl, $fh, $queue, $sched, $module) = @_;
 
     my $plugins = cPanel::TaskQueue::PluginManager::get_plugins_hash();
     if ( !defined $module ) {
@@ -391,22 +381,22 @@ sub list_commands {
     else {
         print $fh "No module named $module was loaded.\n";
     }
+    return;
 }
 
 sub queue_status {
-    my $fh    = shift;
-    my $queue = shift;
-    my $sched = shift;
+    my ($ctrl, $fh, $queue, $sched) = @_;
 
     print $fh "Queue:\n";
-    print $fh "\tQueue Name:\t",    $queue->get_name,                  "\n";
-    print $fh "\tDef. Timeout:\t",  $queue->get_default_timeout,       "\n";
-    print $fh "\tMax Timeout:\t",   $queue->get_max_timeout,           "\n";
-    print $fh "\tMax # Running:\t", $queue->get_max_running,           "\n";
-    print $fh "\tChild Timeout:\t", $queue->get_default_child_timeout, "\n";
-    print $fh "\tProcessing:\t",    $queue->how_many_in_process,       "\n";
-    print $fh "\tQueued:\t\t",      $queue->how_many_queued,           "\n";
-    print $fh "\tDeferred:\t\t",    $queue->how_many_deferred,         "\n";
+    print $fh "\tQueue Name:\t",    $queue->get_name,                     "\n";
+    print $fh "\tDef. Timeout:\t",  $queue->get_default_timeout,          "\n";
+    print $fh "\tMax Timeout:\t",   $queue->get_max_timeout,              "\n";
+    print $fh "\tMax # Running:\t", $queue->get_max_running,              "\n";
+    print $fh "\tChild Timeout:\t", $queue->get_default_child_timeout,    "\n";
+    print $fh "\tProcessing:\t",    $queue->how_many_in_process,          "\n";
+    print $fh "\tQueued:\t\t",      $queue->how_many_queued,              "\n";
+    print $fh "\tDeferred:\t",      $queue->how_many_deferred,            "\n";
+    print $fh "\tPaused:\t\t",      ($queue->is_paused() ? 'yes' : 'no'), "\n";
 
     if ( defined $sched ) {
         print $fh "Scheduler:\n";
@@ -416,10 +406,11 @@ sub queue_status {
         print $fh "\tTime to next:\t$seconds\n" if defined $seconds;
     }
     print $fh "\n";
+    return;
 }
 
 sub convert_state_files {
-    my ($fh, $queue, $sched, $fmt) = @_;
+    my ($ctrl, $fh, $queue, $sched, $fmt) = @_;
 
     $fmt = lc $fmt;
     unless ( exists $format{$fmt} ) {
@@ -431,8 +422,9 @@ sub convert_state_files {
     die "Unable to load serializer module '$new_serial': $@" if $@;
     _convert_a_state_file( $queue, $new_serial );
     _convert_a_state_file( $sched, $new_serial );
-    print $fh "Since the format of the state files have changed, we cannot continue. Reload program specifying new serializer.\n";
-    die "Must Restart\n";
+    print $fh "Since the format of the state files have changed, don't forget to change the serialization format in other programs.\n";
+    $ctrl->{serial} = $fmt;
+    return;
 }
 
 sub _convert_a_state_file {
@@ -450,6 +442,15 @@ sub _convert_a_state_file {
         unlink "$curr_state_file.orig";
         rename $curr_state_file, "$curr_state_file.orig";
     }
+}
+
+sub display_queue_info {
+    my ($ctrl, $fh, $queue, $sched, @args) = @_;
+    print $fh "Current TaskQueue Information\n";
+    print $fh "Serializer:     $ctrl->{serial} ($format{lc $ctrl->{serial}})\n";
+    print $fh "TaskQueue file: ", $queue->_state_file(), "\n";
+    print $fh "Scheduler file: ", $sched->_state_file(), "\n";
+    return;
 }
 
 sub _print_task {
