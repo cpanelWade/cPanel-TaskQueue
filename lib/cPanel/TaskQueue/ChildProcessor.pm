@@ -1,9 +1,16 @@
 package cPanel::TaskQueue::ChildProcessor;
 
+# cpanel - cPanel/TaskQueue/ChildProcessor.pm     Copyright(c) 2012 cPanel, Inc.
+#                                                           All rights Reserved.
+# copyright@cpanel.net                                         http://cpanel.net
+#
+# This module handles queuing of tasks for execution. The queue is persistent
+# handles consolidating of duplicate tasks.
+
 use strict;
 #use warnings;
 use base 'cPanel::TaskQueue::Processor';
-use cPanel::TaskQueue::Scheduler;
+use cPanel::TaskQueue::Scheduler ();
 
 {
     sub get_child_timeout {
