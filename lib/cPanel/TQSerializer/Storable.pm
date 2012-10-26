@@ -11,18 +11,18 @@ use Storable();
 use strict;
 
 sub load {
-    my ($class, $fh) = @_;
-    my $ref = eval { Storable::fd_retrieve( $fh ) };
+    my ( $class, $fh ) = @_;
+    my $ref = eval { Storable::fd_retrieve($fh) };
     return @{ $ref || [] };
 }
 
 sub save {
-    my ($class, $fh, @args) = @_;
+    my ( $class, $fh, @args ) = @_;
     return Storable::nstore_fd( \@args, $fh );
 }
 
 sub filename {
-    my ($class, $stub) = @_;
+    my ( $class, $stub ) = @_;
     return "$stub.stor";
 }
 

@@ -1,7 +1,7 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
-0.602     2012-10-26 15:36:21 America/Chicago
+0.602     2012-10-26 16:06:06 America/Chicago
        Correct importing of cPanel::TaskQueue::Scheduler in the module
        cPanel::TaskQueue::ChildProcessor. Failed if configuration had been set
        to non-defaults elsewhere in the code.
