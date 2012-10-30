@@ -1,8 +1,30 @@
 package cPanel::TaskQueue::Ctrl;
 
-# cpanel - cPanel/TaskQueue/Ctrl.pm               Copyright(c) 2011 cPanel, Inc.
+# cpanel - cPanel/TaskQueue/Ctrl.pm               Copyright(c) 2012 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the owner nor the names of its contributors may
+#       be used to endorse or promote products derived from this software
+#       without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL  BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 use warnings;
 use strict;
@@ -25,7 +47,7 @@ my %validate = (
     'sname'  => sub { return defined $_[0] && length $_[0]; },
     'logger' => sub { return 1; },
     'out'    => sub { return 1; },
-    'serial' => sub { return exists $format{lc $_[0]}; },
+    'serial' => sub { return exists $format{ lc $_[0] }; },
 );
 
 my %commands = (
@@ -147,7 +169,7 @@ sub run {
 sub synopsis {
     my ( $self, $cmd ) = @_;
 
-    if ($cmd && exists $commands{$cmd}) {
+    if ( $cmd && exists $commands{$cmd} ) {
         return $commands{$cmd}->{'synopsis'}, '';
     }
     return map { $commands{$_}->{'synopsis'}, '' } sort keys %commands;
@@ -155,7 +177,7 @@ sub synopsis {
 
 sub help {
     my ( $self, $cmd ) = @_;
-    if ($cmd && exists $commands{$cmd}) {
+    if ( $cmd && exists $commands{$cmd} ) {
         return @{ $commands{$cmd} }{ 'synopsis', 'help' }, '';
     }
     return map { @{ $commands{$_} }{ 'synopsis', 'help' }, '' } sort keys %commands;
@@ -165,10 +187,10 @@ sub _get_queue {
     my ($self) = @_;
     return cPanel::TaskQueue->new(
         {
-            name => $self->{qname},
+            name      => $self->{qname},
             state_dir => $self->{qdir},
             ( exists $self->{logger} ? ( logger => $self->{logger} ) : () ),
-            ( defined $self->{serial} ? ( serial => $format{lc $self->{serial}} ) : () ),
+            ( defined $self->{serial} ? ( serial => $format{ lc $self->{serial} } ) : () ),
         }
     );
 }
@@ -182,16 +204,16 @@ sub _get_scheduler {
     return undef unless exists $self->{sdir};    ## no critic (ProhibitExplicitReturnUndef)
     return cPanel::TaskQueue::Scheduler->new(
         {
-            name => $self->{sname},
+            name      => $self->{sname},
             state_dir => $self->{sdir},
             ( exists $self->{logger} ? ( logger => $self->{logger} ) : () ),
-            ( defined $self->{serial} ? ( serial => $format{lc $self->{serial}} ) : () ),
+            ( defined $self->{serial} ? ( serial => $format{ lc $self->{serial} } ) : () ),
         }
     );
 }
 
 sub queue_tasks {
-    my ($ctrl, $fh, $queue, $sched, @cmds) = @_;
+    my ( $ctrl, $fh, $queue, $sched, @cmds ) = @_;
     die "No command to queue.\n" unless @cmds;
 
     foreach my $cmdstring (@cmds) {
@@ -206,7 +228,7 @@ sub queue_tasks {
 }
 
 sub unqueue_tasks {
-    my ($ctrl, $fh, $queue, $sched, @tids) = @_;
+    my ( $ctrl, $fh, $queue, $sched, @tids ) = @_;
     die "No task ids to unqueue.\n" unless @tids;
 
     my $count = 0;
@@ -223,7 +245,7 @@ sub unqueue_tasks {
 }
 
 sub schedule_tasks {
-    my ($ctrl, $fh, $queue, $sched, $subcmd, @cmds) = @_;
+    my ( $ctrl, $fh, $queue, $sched, $subcmd, @cmds ) = @_;
     die "No command to schedule.\n" unless defined $subcmd;
 
     my $args = {};
@@ -248,7 +270,7 @@ sub schedule_tasks {
 }
 
 sub unschedule_tasks {
-    my ($ctrl, $fh, $queue, $sched, @tids) = @_;
+    my ( $ctrl, $fh, $queue, $sched, @tids ) = @_;
     die "No task ids to unschedule.\n" unless @tids;
 
     my $count = 0;
@@ -274,7 +296,7 @@ sub _any_is {
 }
 
 sub find_task {
-    my ($ctrl, $fh, $queue, $sched, $subcmd, $match) = @_;
+    my ( $ctrl, $fh, $queue, $sched, $subcmd, $match ) = @_;
 
     if ( !defined $match ) {
         print $fh "No matching criterion.\n";
@@ -305,7 +327,7 @@ sub find_task {
 }
 
 sub list_tasks {
-    my ($ctrl, $fh, $queue, $sched, @subcmds) = @_;
+    my ( $ctrl, $fh, $queue, $sched, @subcmds ) = @_;
     my $print = \&_print_task;
     if ( _any_is( 'verbose', @subcmds ) ) {
         $print = \&_verbosely_print_task;
@@ -360,7 +382,7 @@ sub list_tasks {
 }
 
 sub list_plugins {
-    my ($ctrl, $fh, $queue, $sched, $verbosity) = @_;
+    my ( $ctrl, $fh, $queue, $sched, $verbosity ) = @_;
 
     if ( defined $verbosity && $verbosity eq 'verbose' ) {
         my $plugins = cPanel::TaskQueue::PluginManager::get_plugins_hash();
@@ -375,7 +397,7 @@ sub list_plugins {
 }
 
 sub list_commands {
-    my ($ctrl, $fh, $queue, $sched, $module) = @_;
+    my ( $ctrl, $fh, $queue, $sched, $module ) = @_;
 
     my $plugins = cPanel::TaskQueue::PluginManager::get_plugins_hash();
     if ( !defined $module ) {
@@ -393,18 +415,18 @@ sub list_commands {
 }
 
 sub queue_status {
-    my ($ctrl, $fh, $queue, $sched) = @_;
+    my ( $ctrl, $fh, $queue, $sched ) = @_;
 
     print $fh "Queue:\n";
-    print $fh "\tQueue Name:\t",    $queue->get_name,                     "\n";
-    print $fh "\tDef. Timeout:\t",  $queue->get_default_timeout,          "\n";
-    print $fh "\tMax Timeout:\t",   $queue->get_max_timeout,              "\n";
-    print $fh "\tMax # Running:\t", $queue->get_max_running,              "\n";
-    print $fh "\tChild Timeout:\t", $queue->get_default_child_timeout,    "\n";
-    print $fh "\tProcessing:\t",    $queue->how_many_in_process,          "\n";
-    print $fh "\tQueued:\t\t",      $queue->how_many_queued,              "\n";
-    print $fh "\tDeferred:\t",      $queue->how_many_deferred,            "\n";
-    print $fh "\tPaused:\t\t",      ($queue->is_paused() ? 'yes' : 'no'), "\n";
+    print $fh "\tQueue Name:\t",    $queue->get_name,                  "\n";
+    print $fh "\tDef. Timeout:\t",  $queue->get_default_timeout,       "\n";
+    print $fh "\tMax Timeout:\t",   $queue->get_max_timeout,           "\n";
+    print $fh "\tMax # Running:\t", $queue->get_max_running,           "\n";
+    print $fh "\tChild Timeout:\t", $queue->get_default_child_timeout, "\n";
+    print $fh "\tProcessing:\t",    $queue->how_many_in_process,       "\n";
+    print $fh "\tQueued:\t\t",      $queue->how_many_queued,           "\n";
+    print $fh "\tDeferred:\t",      $queue->how_many_deferred,         "\n";
+    print $fh "\tPaused:\t\t", ( $queue->is_paused() ? 'yes' : 'no' ), "\n";
 
     if ( defined $sched ) {
         print $fh "Scheduler:\n";
@@ -418,7 +440,7 @@ sub queue_status {
 }
 
 sub convert_state_files {
-    my ($ctrl, $fh, $queue, $sched, $fmt) = @_;
+    my ( $ctrl, $fh, $queue, $sched, $fmt ) = @_;
 
     $fmt = lc $fmt;
     unless ( exists $format{$fmt} ) {
@@ -436,15 +458,15 @@ sub convert_state_files {
 }
 
 sub _convert_a_state_file {
-    my ($q, $new_serial) = @_;
+    my ( $q, $new_serial ) = @_;
 
     my $curr_serial = $q->_serializer();
-    if( $new_serial ne $curr_serial ) {
+    if ( $new_serial ne $curr_serial ) {
         my $curr_state_file = $q->_state_file();
         my $new_state_file = $new_serial->filename( substr( $curr_state_file, 0, rindex( $curr_state_file, '.' ) ) );
         open my $ifh, '<', $curr_state_file or die "Unable to read '$curr_state_file': $!\n";
-        open my $ofh, '>', $new_state_file or die "Unable to write '$new_state_file': $!\n";
-        $new_serial->save( $ofh, $curr_serial->load( $ifh ) );
+        open my $ofh, '>', $new_state_file  or die "Unable to write '$new_state_file': $!\n";
+        $new_serial->save( $ofh, $curr_serial->load($ifh) );
         close $ofh;
         close $ifh;
         unlink "$curr_state_file.orig";
@@ -453,7 +475,7 @@ sub _convert_a_state_file {
 }
 
 sub display_queue_info {
-    my ($ctrl, $fh, $queue, $sched, @args) = @_;
+    my ( $ctrl, $fh, $queue, $sched, @args ) = @_;
     print $fh "Current TaskQueue Information\n";
     print $fh "Serializer:     $ctrl->{serial} ($format{lc $ctrl->{serial}})\n";
     print $fh "TaskQueue file: ", $queue->_state_file(), "\n";
@@ -462,15 +484,15 @@ sub display_queue_info {
 }
 
 sub process_one_step {
-    my ($ctrl, $fh, $queue, $sched, @args) = @_;
+    my ( $ctrl, $fh, $queue, $sched, @args ) = @_;
     my $argcnt = @args;
     @args = grep { 'verbose' ne $_ } @args;
     my $verbose = $argcnt > @args;
     @args = qw/scheduled waiting/ unless grep { 'scheduled' eq $_ or 'waiting' eq $_ } @args;
     eval {
         if ( _any_is( 'scheduled', @args ) ) {
-            my $cnt = $sched->process_ready_tasks( $queue );
-            if ( $cnt ) {
+            my $cnt = $sched->process_ready_tasks($queue);
+            if ($cnt) {
                 print $fh "$cnt scheduled tasks moved to queue.\n" if $verbose;
             }
             else {

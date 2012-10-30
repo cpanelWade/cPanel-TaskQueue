@@ -11,18 +11,18 @@ use YAML::Syck ();
 use strict;
 
 sub load {
-    my ($class, $fh) = @_;
+    my ( $class, $fh ) = @_;
     local $/;
     return YAML::Syck::Load( scalar <$fh> );
 }
 
 sub save {
-    my ($class, $fh, @args) = @_;
-    return print $fh YAML::Syck::Dump( @args );
+    my ( $class, $fh, @args ) = @_;
+    return print $fh YAML::Syck::Dump(@args);
 }
 
 sub filename {
-    my ($class, $stub) = @_;
+    my ( $class, $stub ) = @_;
     return "$stub.yaml";
 }
 
