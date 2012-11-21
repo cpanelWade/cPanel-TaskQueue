@@ -1,6 +1,10 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
+0.603     2012-11-26 10:47:36 America/Chicago
+       Add flag to prevent YAML::Syck from reblessing objects from disk. This
+       turns out to be a security problem. Add c::TQ::Task::reconstitute class
+       method to recreate Task objects that have been serialized.
 0.602     2012-10-26 16:06:06 America/Chicago
        Correct importing of cPanel::TaskQueue::Scheduler in the module
        cPanel::TaskQueue::ChildProcessor. Failed if configuration had been set

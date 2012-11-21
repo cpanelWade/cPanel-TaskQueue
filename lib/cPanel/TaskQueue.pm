@@ -343,6 +343,8 @@ my $taskqueue_uuid = 'TaskQueue';
             grep {
                 defined $_
                   and eval { $_->isa('cPanel::TaskQueue::Task') }
+              } map {
+                eval { cPanel::TaskQueue::Task->reconstitute($_) }
               } @{$task_list}
         ];
     }

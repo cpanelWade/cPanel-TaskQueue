@@ -1,6 +1,6 @@
 package cPanel::TQSerializer::Storable;
 
-# cpanel - cPanel/TQSerializer/Storable.pm        Copyright(c) 2011 cPanel, Inc.
+# cpanel - cPanel/TQSerializer/Storable.pm        Copyright(c) 2012 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 # This code is subject to the cPanel license. Unauthorized copying is prohibited

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# cpanel - bin/taskqueuectl                       Copyright(c) 2011 cPanel, Inc.
+# cpanel - bin/taskqueuectl                       Copyright(c) 2012 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 
@@ -21,8 +21,8 @@ my @shell_help = (
 main() unless caller;
 
 sub main {
-    my $queue_dir  = '.';
-    my $qname      = 'main';
+    my $queue_dir = '.';
+    my $qname     = 'main';
     my $sname;
     my $plugindirs = [];
     my $namespaces = [];
@@ -30,7 +30,7 @@ sub main {
     my $logfile;
     my $serial;
 
-    handle_config_file( 'taskqueue.cfg' );
+    handle_config_file('taskqueue.cfg');
 
     GetOptions(
         'dir=s',        \$queue_dir,
@@ -39,7 +39,7 @@ sub main {
         'plugindir=s@', \$plugindirs,
         'namespace=s@', \$namespaces,
         'plugin=s@',    \$plugins,
-        'logfile=s',    \$logfile,     # keep config file compatible between tools.
+        'logfile=s',    \$logfile,      # keep config file compatible between tools.
         'serial=s',     \$serial,
     );
 
@@ -52,7 +52,7 @@ sub main {
 
     my $ctrl = cPanel::TaskQueue::Ctrl->new( { 'qdir' => $queue_dir, 'qname' => $qname, 'sname' => $sname, 'serial' => $serial } );
 
-    process_command( $ctrl );
+    process_command($ctrl);
     exit 0;
 }
 
@@ -61,16 +61,16 @@ sub _man {
     unless (@_) {
         print "\n", map { $_, "\n" } $ctrl->help(), map { @{$_}, '' } @shell_help;
     }
-    elsif ($_[0] eq 'shell') {
+    elsif ( $_[0] eq 'shell' ) {
         local $" = "\n";
         print "\n@{$shell_help[0]}\n\n";
     }
-    elsif ($_[0] eq 'quit') {
+    elsif ( $_[0] eq 'quit' ) {
         local $" = "\n";
         print "\n@{$shell_help[1]}\n\n";
     }
     else {
-        print "\n", map { $_, "\n" } $ctrl->help( @_ );
+        print "\n", map { $_, "\n" } $ctrl->help(@_);
     }
 }
 
@@ -79,22 +79,21 @@ sub _help {
     unless (@_) {
         print "\n", map { $_, "\n" } $ctrl->synopsis(), map { $_->[0], '' } @shell_help;
     }
-    elsif ($_[0] eq 'shell') {
+    elsif ( $_[0] eq 'shell' ) {
         print "\n$shell_help[0]->[0]\n\n";
     }
-    elsif ($_[0] eq 'quit') {
+    elsif ( $_[0] eq 'quit' ) {
         print "\n$shell_help[1]->[0]\n\n";
     }
     else {
-        print "\n", map { $_, "\n" } $ctrl->synopsis( @_ );
+        print "\n", map { $_, "\n" } $ctrl->synopsis(@_);
     }
 }
-
 
 sub process_command {
     my ($ctrl) = @_;
 
-    unless ( @ARGV ) {
+    unless (@ARGV) {
         print "Missing command argument.\nUsage:\n\n";
         print join( "\n", $ctrl->help(), @shell_help ), "\n\n";
         exit;
@@ -103,20 +102,20 @@ sub process_command {
     if ( $ARGV[0] eq 'shell' ) {
         @ARGV = ();
         my %cmds = (
-            man => sub { _man( $ctrl, @_ ); },
+            man  => sub { _man( $ctrl,  @_ ); },
             help => sub { _help( $ctrl, @_ ); },
         );
 
-        while ( 1 ) {
-            my $line = prompt( ' > ' );
+        while (1) {
+            my $line = prompt(' > ');
             last if $line =~ /^\s*(?:q(?:uit)?|exit|bye)\s*$/i;
 
-            my ($cmd, @args) = split( / /, $line );
+            my ( $cmd, @args ) = split( / /, $line );
             if ( exists $cmds{$cmd} ) {
-                $cmds{$cmd}->( @args );
+                $cmds{$cmd}->(@args);
             }
             else {
-                safe_run( $ctrl, parse_line( $line ) );
+                safe_run( $ctrl, parse_line($line) );
             }
         }
     }
@@ -126,9 +125,9 @@ sub process_command {
 }
 
 sub safe_run {
-    my ($ctrl, @args) = @_;
+    my ( $ctrl, @args ) = @_;
 
-    eval { $ctrl->run( @args ); 1; } or do {
+    eval { $ctrl->run(@args); 1; } or do {
         if ( $@ eq "Must Restart\n" ) {
 
             # Command requested a restart.
@@ -143,11 +142,11 @@ sub safe_run {
 
 sub prompt {
     my ($prompt) = (@_);
-    unless( defined $term ) {
-        $term = Term::ReadLine->new( 'taskqueue' );
-        $term->ornaments( 0 );
+    unless ( defined $term ) {
+        $term = Term::ReadLine->new('taskqueue');
+        $term->ornaments(0);
     }
-    chomp( my $line = $term->readline( $prompt ) );
+    chomp( my $line = $term->readline($prompt) );
     $term->addhistory;
     return $line;
 }
@@ -167,10 +166,10 @@ sub parse_line {
 }
 
 sub load_plugins {
-    my ($plugindirs, $namespaces, $plugins) = @_;
+    my ( $plugindirs, $namespaces, $plugins ) = @_;
     if ( @{$plugins} ) {
         foreach my $modname ( @{$plugins} ) {
-            cPanel::TaskQueue::PluginManager::load_plugin_by_name( $modname );
+            cPanel::TaskQueue::PluginManager::load_plugin_by_name($modname);
         }
     }
     else {
@@ -187,7 +186,7 @@ sub handle_config_file {
         $config = $1;
         shift @ARGV;
     }
-    unshift @ARGV, config_file( $config ) if -e $config;
+    unshift @ARGV, config_file($config) if -e $config;
 }
 
 sub config_file {
@@ -433,7 +432,7 @@ No outstanding bugs.
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011, cPanel, Inc. All rights reserved.
+Copyright (c) 2012, cPanel, Inc. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
