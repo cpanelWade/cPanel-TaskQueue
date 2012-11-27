@@ -5,7 +5,7 @@ cPanel::TaskQueue::Task - Objects representing the task concept.
 
 =head1 VERSION
 
-This document describes cPanel::TaskQueue::Task version 0.602.
+This document describes cPanel::TaskQueue::Task version 0.603.
 
 =head1 SYNOPSIS
 
@@ -67,6 +67,17 @@ limitation reduces the possibility of Tasks that cannot be restored correctly
 from disk.
 
 =back
+
+=item cPanel::TaskQueue::Task->reconstitute( $task_hash )
+
+Given a hash that represents the core of a C<Cpanel::TaskQueue::Task> object,
+rebuild a task object to match this state. This class method supports
+rebuilding the C<Task> objects after a serialize/deserialize round-trip that
+strips the type from the objects.
+
+The method dies if any parameter is the wrong type or or if any parameters are
+missing. Extra parameters are discarded. The data is cloned to remove the
+chance that someone will mess with the object through the original hash.
 
 =item $q->clone()
 
@@ -252,7 +263,7 @@ cPanel::TaskProcessor
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011, cPanel, Inc. All rights reserved.
+Copyright (c) 2012, cPanel, Inc. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
