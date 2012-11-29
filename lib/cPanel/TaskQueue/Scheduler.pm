@@ -458,6 +458,7 @@ my $tasksched_uuid = 'TaskQueue-Scheduler';
         my ($item) = @_;
         return unless 'HASH' eq ref $item;
         return unless exists $item->{task} and exists $item->{time};
+        $item->{task} = cPanel::TaskQueue::Task->reconstitute( $item->{task} );
         return unless eval { $item->{task}->isa('cPanel::TaskQueue::Task') };
         return $item->{time} =~ /^\d+$/;
     }

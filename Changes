@@ -1,6 +1,9 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
+0.604     2012-11-29 12:41:58 America/Chicago
+       Correct scheduler code to use the new reconstitute method to restore
+       task objects loaded from disk.
 0.603     2012-11-26 10:47:36 America/Chicago
        Add flag to prevent YAML::Syck from reblessing objects from disk. This
        turns out to be a security problem. Add c::TQ::Task::reconstitute class
