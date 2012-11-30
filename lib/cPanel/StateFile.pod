@@ -5,7 +5,7 @@ cPanel::StateFile - Standardize the handling of file-based state data.
 
 =head1 VERSION
 
-This document describes cPanel::StateFile 0.603
+This document describes cPanel::StateFile 0.604
 
 =head1 SYNOPSIS
 
