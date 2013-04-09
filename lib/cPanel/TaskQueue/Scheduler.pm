@@ -1,6 +1,6 @@
 package cPanel::TaskQueue::Scheduler;
 
-# cpanel - cPanel/TaskQueue/Scheduler.pm          Copyright(c) 2012 cPanel, Inc.
+# cpanel - cPanel/TaskQueue/Scheduler.pm          Copyright(c) 2013 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 #

@@ -1,6 +1,6 @@
 package cPanel::StateFile;
 
-# cpanel - cPanel/StateFile.pm                    Copyright(c) 2012 cPanel, Inc.
+# cpanel - cPanel/StateFile.pm                    Copyright(c) 2013 cPanel, Inc.
 #                                                           All rights Reserved.
 # copyright@cpanel.net                                         http://cpanel.net
 #
@@ -30,8 +30,9 @@ use strict;
 
 #use warnings;
 
-use Fcntl      ();
-use File::Path ();
+use Fcntl        ();
+use File::Path   ();
+use Scalar::Util ();
 
 my $the_logger;
 my $the_locker;
@@ -351,6 +352,7 @@ sub import {
         $self->{file_size}     = -1;
         $self->{file_handle}   = undef;
         $self->{flock_timeout} = $args_ref->{timeout} || 60;
+        Scalar::Util::weaken($self->{data_object});
 
         $self->synch();
 
@@ -386,22 +388,20 @@ sub import {
     sub synch {
         my ($self) = @_;
 
-        my $guard;
+        # need to set the lock asap to avoid any concurrency problem
+        my $guard = cPanel::StateFile::Guard->new( { state => $self } );
 
         if ( !-e $self->{file_name} or -z _ ) {
-            $guard = cPanel::StateFile::Guard->new( { state => $self } );
 
             # File doesn't exist or is empty, initialize it.
             $guard->update_file();
         }
         else {
-            $guard = $self->_resynch($guard);
+            $self->_resynch($guard);
         }
 
         # if not assigned anywhere, let the guard die.
         return unless defined wantarray;
-
-        $guard ||= cPanel::StateFile::Guard->new( { state => $self } );
 
         # Otherwise return it.
         return $guard;

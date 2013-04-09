@@ -1,6 +1,8 @@
 Revision history for cPanel-TaskQueue
 
 {{$NEXT}}
+       Remove concurrency problem that could result in lost tasks. Weaken
+       reference to data object that causes a memory leak.
 0.604     2012-11-29 12:41:58 America/Chicago
        Correct scheduler code to use the new reconstitute method to restore
        task objects loaded from disk.
